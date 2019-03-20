@@ -2,8 +2,6 @@ from django.db import models
 import uuid
 from datetime import datetime
 
-# Create your models here.
-
 class SessionLevel(models.Model):
     """
     Table to Keeping track of sessions

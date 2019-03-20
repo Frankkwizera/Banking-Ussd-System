@@ -5,6 +5,17 @@ from .models import *
 from django.core.exceptions import ObjectDoesNotExist
 
 
+
+def mainMenu():
+    response = "CON Welcome to Banking Ussd Portal \n"
+    response += "1. Transfer Money \n"
+    response += "2. Withdraw Money \n"
+    response += "3. Deposit Money \n"
+    response += "4. Account Balance \n"
+    response += "00. End session"
+
+    return response
+
 @csrf_exempt
 def index(request):
     if request.method == 'POST':
@@ -14,10 +25,8 @@ def index(request):
         text = request.POST.get('text')
         response = ""
 
-        print(text)
         textArray = text.split('*')
         lastestInput = textArray[-1]
-
         
         #checking if it's a returning session or new session
         try:
@@ -37,12 +46,7 @@ def index(request):
 
             if level == 0:
                 if lastestInput == "":
-                    response = "CON Welcome to Banking Ussd Portal \n"
-                    response += "1. Transfer Money \n"
-                    response += "2. Withdraw Money \n"
-                    response += "3. Deposit Money \n"
-                    response += "4. Account Balance \n"
-                    response += "00. End session"
+                    response = mainMenu()
 
                 elif lastestInput == "1":
                     response = "CON  How much do you want to transfer \n"
@@ -53,7 +57,12 @@ def index(request):
                     response = "CON How much do you want to withdraw \n"
                     session.level = 5
                     session.save()
-                    
+                
+                elif lastestInput == "3":
+                    response = "CON Input agent's number is none use default 250 \n"
+                    session.level = 7
+                    session.save()
+
                 elif lastestInput == "4":
                     response = "CON Account your account balance \n"
                     response += str(account.balance) + " RWF \n"
@@ -64,12 +73,7 @@ def index(request):
                     response = "END Thanks for using this Ussd Banking Portal"
 
                 else:
-                    response = "CON Welcome to Banking Ussd Portal \n"
-                    response += "1. Transfer Money \n"
-                    response += "2. Withdraw Money \n"
-                    response += "3. Deposit Money \n"
-                    response += "4. Account Balance \n"
-                    response += "00. End session"
+                    response = mainMenu()
 
             elif level == 5:
                 try:
@@ -83,8 +87,6 @@ def index(request):
                         session.save()
 
                 except ValueError:
-                    session.level = 5
-                    session.save()
                     response = "CON Enter Valid Amount"
 
             elif level == 6:
@@ -97,9 +99,53 @@ def index(request):
                 transaction.save()
 
                 response = "END You have successfully sent "+str(amount) + " to "+str(receiver)
+
+            elif level == 7:
+                try:
+                    agentCode = int(lastestInput)
+
+                    if agentCode == 250:
+                        session.level = 8
+                        session.save()
+                        response = "CON How much do you wish to deposit \n"
+                    
+                    else:
+                        response = "CON No such agent code try another or use 250"
+
+                except ValueError:
+                    response = "CON Input valid agent's number is none use default 250 \n"
             
-            #elif level == 7:
-                #try:
+            elif level == 8:
+                try:
+                    amount = int(lastestInput)
+                    
+                    if amount <= 0:
+                        response = "CON "+ lastestInput + " is not valid deposit \n"
+                        response += "Enter valid Deposit"
+
+                    else:
+                        agent = BankUser.objects.get(phone_number=250)
+
+                        if agent is None:
+                            response = "END Agent doesn't Exist"
+
+                        else:
+                            agentAccount = BankAccount.objects.get(bankUser=agent)
+                            transaction = BankTransaction.objects.create(From=agent,To=phone_number,Amount=amount)
+                            transaction.save()
+
+                            agentAccount.balance -= amount
+                            agentAccount.save()
+
+                            account.balance += amount
+                            account.save()
+
+                            print("*** successfully ended")
+
+                            response = "END successfully deposit " + lastestInput +" \n New Balance is "+ str(account.balance) 
+
+                except ValueError:
+                    response = "CON Enter valid amount to deposit "+lastestInput +" \n"
 
 
         else:

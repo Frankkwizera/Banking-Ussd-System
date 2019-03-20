@@ -8,3 +8,7 @@
 
 #db
 db.sqlite3
+
+app/__pycache__
+app/migrations
+bankUssdApp/__pycache__
