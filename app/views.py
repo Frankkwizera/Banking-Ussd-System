@@ -6,8 +6,8 @@ from django.core.exceptions import ObjectDoesNotExist
 
 
 
-def mainMenu():
-    response = "CON Welcome to Banking Ussd Portal \n"
+def mainMenu(name):
+    response = "CON Welcome "+ name + " \n"
     response += "1. Transfer Money \n"
     response += "2. Withdraw Money \n"
     response += "3. Deposit Money \n"
@@ -38,6 +38,33 @@ def index(request):
             session.save()
             level = session.level
         
+        #saving new user which comes 
+        #level 9 newUser's name
+        if level == 9:
+            response = "CON Welcome "+ lastestInput +" Input your address"
+            session.level = 10
+            session.save()
+            return HttpResponse(response)
+        
+        #level 10 newUser's address
+        if level == 10:
+            name = textArray[len(textArray)-2]
+            address = textArray[len(textArray)-1]
+
+            #creating bank user
+            bankUser = BankUser.objects.create(name=name,phone_number=phone_number,address=address)
+
+            #creating bank Account
+            account = BankAccount.objects.create(bankUser=bankUser,balance=0)
+
+            session.level = 0 
+            session.save()
+            
+            response = mainMenu(bankUser.name)
+            return HttpResponse(response)
+
+
+
         #Checking if user is Registered
         bankUser = BankUser.objects.filter(phone_number=phone_number).first()
         if bankUser is not None:
@@ -46,7 +73,7 @@ def index(request):
 
             if level == 0:
                 if lastestInput == "":
-                    response = mainMenu()
+                    response = mainMenu(bankUser.name)
 
                 elif lastestInput == "1":
                     response = "CON  How much do you want to transfer \n"
@@ -73,7 +100,7 @@ def index(request):
                     response = "END Thanks for using this Ussd Banking Portal"
 
                 else:
-                    response = mainMenu()
+                    response = mainMenu(bankUser.name)
 
             elif level == 5:
                 try:
@@ -118,7 +145,7 @@ def index(request):
             elif level == 8:
                 try:
                     amount = int(lastestInput)
-                    
+
                     if amount <= 0:
                         response = "CON "+ lastestInput + " is not valid deposit \n"
                         response += "Enter valid Deposit"
@@ -140,18 +167,15 @@ def index(request):
                             account.balance += amount
                             account.save()
 
-                            print("*** successfully ended")
-
                             response = "END successfully deposit " + lastestInput +" \n New Balance is "+ str(account.balance) 
 
                 except ValueError:
                     response = "CON Enter valid amount to deposit "+lastestInput +" \n"
 
-
         else:
-            #save new user
-            print(" User ntawuhari")
-            response = "END still working on saving new user"
-
+            response = "CON Welcome to USSD banking portal"
+            response += " Enter your names \n"
+            session.level = 9
+            session.save()
 
         return HttpResponse(response)
