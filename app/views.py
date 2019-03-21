@@ -37,17 +37,17 @@ def index(request):
             session = SessionLevel.objects.create(session_id=session_id,phone_number=phone_number)
             session.save()
             level = session.level
-        
+
         #saving new user which comes 
-        #level 9 newUser's name
-        if level == 9:
+        #level -2 newUser's name
+        if level == -2:
             response = "CON Welcome "+ lastestInput +" Input your address"
-            session.level = 10
+            session.level = -1
             session.save()
             return HttpResponse(response)
         
-        #level 10 newUser's address
-        if level == 10:
+        #level -1 newUser's address
+        if level == -1:
             name = textArray[len(textArray)-2]
             address = textArray[len(textArray)-1]
 
@@ -175,7 +175,7 @@ def index(request):
         else:
             response = "CON Welcome to USSD banking portal"
             response += " Enter your names \n"
-            session.level = 9
+            session.level = -2
             session.save()
 
         return HttpResponse(response)
